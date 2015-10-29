@@ -15,6 +15,7 @@ import RPi.GPIO as GPIO                            #provides pin support
 import ATT_IOT as IOT                              #provide cloud support
 from time import sleep                             #pause the app
 from datetime import datetime                      # get the current hour to set the lights when the device is turned on.
+import Network
 
 #set up the ATT internet of things platform
 
@@ -46,6 +47,7 @@ GPIO.setmode(GPIO.BOARD)
 #GPIO.setup(SensorPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)  #, pull_up_down=GPIO.PUD_DOWN
 GPIO.setup(LightsRelaisPin, GPIO.OUT)
 GPIO.setup(WaterRelaisPin, GPIO.OUT)
+GPIO.output(WaterRelaisPin, True)                   # make certain wather is turned off at startup, pin takes reversed value. Do before everything else: so that the water doesn't keep on running if something else went wrong.		
 
 #callback: handles values sent from the cloudapp to the device
 def on_message(id, value):
@@ -163,19 +165,29 @@ def StartScheduler():
     except (KeyboardInterrupt, SystemExit):
         pass
 
-#make certain that the device & it's features are defined in the cloudapp
-IOT.connect()
-#IOT.addAsset(TempSensorPin, TempSensorName, "temperature", False, "number", "Secondary")
-#IOT.addAsset(WaterLevelSensorPin, WaterLevelSensorName, "Water level", False, "number", "Secondary")
-IOT.addAsset(LightsRelaisPin, LightsRelaisName, "Turn the lights on/off", True, "boolean", "Primary")
-IOT.addAsset(WaterRelaisPin, WaterRelaisName, "Turn the water flow on/off", True, "boolean", "Primary")
-IOT.addAsset(ConfigSeasonId, ConfigSeasonName, "Configure the season", True, "{'type': 'string','enum': ['grow', 'flower']}", 'Config')
-lightsOn = LoadConfig()                                            # load the previously stored settings before closing the http connection. otherwise this call fails.
-IOT.subscribe()              							#starts the bi-directional communication
-sleep(2)                                                    # wait 2 seconds until the 
-IOT.send(str(lightsOn).lower(), LightsRelaisPin)             # provide feedback to the platform of the current state of the light (after startup)
-GPIO.output(WaterRelaisPin, True)                   # make certain wather is turned off at startup, pin takes reversed value
-IOT.send("false", WaterRelaisPin) 
+
+try:
+    networkCheckCount = 0
+    while Network.isConnected() == False and networkCheckCount < 5:             # we check a number of times to give the network more time to start up.
+        networkCheckCount = networkCheckCount + 1
+        sleep(2)
+    if Network.isConnected() == False:
+        logging.error("failed to set up network connection")
+    else:
+        #make certain that the device & it's features are defined in the cloudapp
+        IOT.connect()
+        #IOT.addAsset(TempSensorPin, TempSensorName, "temperature", False, "number", "Secondary")
+        #IOT.addAsset(WaterLevelSensorPin, WaterLevelSensorName, "Water level", False, "number", "Secondary")
+        IOT.addAsset(LightsRelaisPin, LightsRelaisName, "Turn the lights on/off", True, "boolean", "Primary")
+        IOT.addAsset(WaterRelaisPin, WaterRelaisName, "Turn the water flow on/off", True, "boolean", "Primary")
+        IOT.addAsset(ConfigSeasonId, ConfigSeasonName, "Configure the season", True, "{'type': 'string','enum': ['grow', 'flower']}", 'Config')
+        lightsOn = LoadConfig()                                            # load the previously stored settings before closing the http connection. otherwise this call fails.
+        IOT.subscribe()              							#starts the bi-directional communication
+        sleep(2)                                                    # wait 2 seconds until the subscription has succeeded (bit of a hack, better would be to use the callback)
+        IOT.send(str(lightsOn).lower(), LightsRelaisPin)             # provide feedback to the platform of the current state of the light (after startup)
+        IOT.send("false", WaterRelaisPin) 
+except:
+    logging.exception("failed to set up the connection with the cloud")
 StartScheduler()
 
 try:

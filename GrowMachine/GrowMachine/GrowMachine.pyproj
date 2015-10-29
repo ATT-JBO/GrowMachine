@@ -26,6 +26,9 @@
   <ItemGroup>
     <Compile Include="ATT_IOT.py" />
     <Compile Include="GrowMachine.py" />
+    <Compile Include="Network.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env\">
