@@ -162,6 +162,7 @@ def StartScheduler():
     scheduler.add_job(TurnWaterOff, 'cron', second='*/15')              # check every 10 seconds: should the water be turned off (day and night is savest)
     try:
         scheduler.start()
+        print 'schedule set'
     except (KeyboardInterrupt, SystemExit):
         pass
 
