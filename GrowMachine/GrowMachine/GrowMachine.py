@@ -7,7 +7,7 @@
 #############################
 
 import logging
-logging.basicConfig()
+logging.config.fileConfig('logging.config')
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -106,47 +106,63 @@ def LoadConfig():
     '''
     load the previously stored configurations and set accordingly
     '''
-    season = IOT.getAssetState(ConfigSeasonId)
-    if season:
-        print "found season: " + str(season)
-        if season[unicode('state')]: 
-            print "setting to season: " + str(season)
-            SetClock(str(season[unicode('state')][unicode('value')]))
-    #todo: calculate the current light setting and set it
-    currentHour = datetime.now().hour
-    print "current hour: " + str(currentHour)
-    if currentHour >= CycleStart and currentHour <= CycleEnd:
-        GPIO.output(LightsRelaisPin, False)                         # inversed value for pin
-        return True
-    else:
-        GPIO.output(LightsRelaisPin, True)
-        return False
+    try:
+        season = IOT.getAssetState(ConfigSeasonId)
+        if season:
+            print "found season: " + str(season)
+            if season[unicode('state')]:
+                print "setting to season: " + str(season)
+                SetClock(str(season[unicode('state')][unicode('value')]))
+        #todo: calculate the current light setting and set it
+        currentHour = datetime.now().hour
+        print "current hour: " + str(currentHour)
+        if currentHour >= CycleStart and currentHour <= CycleEnd:
+            GPIO.output(LightsRelaisPin, False)                         # inversed value for pin
+            return True
+        else:
+            GPIO.output(LightsRelaisPin, True)
+            return False
+    except:
+		logging.exception('failed to get asset state')
     
 
 def SwitchLightsOn():
     '''Switch the lights on'''
-    GPIO.output(LightsRelaisPin, False)     # pin takes reversed value
-    IOT.send('true', LightsRelaisPin) 
+    try:
+        GPIO.output(LightsRelaisPin, False)     # pin takes reversed value
+        IOT.send('true', LightsRelaisPin)
+    except:
+		logging.exception('failed to switch lights on')
 
 def SwitchLightsOff():
     '''Switch the lights off'''
-    GPIO.output(LightsRelaisPin, True)      #pin is reversed value
-    IOT.send('false', LightsRelaisPin) 
+    try:
+        GPIO.output(LightsRelaisPin, True)      #pin is reversed value
+        IOT.send('false', LightsRelaisPin)
+    except:
+		logging.exception('failed to switch lights off')
 
 def TurnWaterOn():
     global WaterRelaisState
     '''Turn the water on'''
-    WaterRelaisState = True
-    GPIO.output(WaterRelaisPin, False)      # pin takes reversed value.
-    IOT.send("true", WaterRelaisPin) 
+    try:
+        GPIO.output(not WaterRelaisPin, False)      # pin takes reversed value.
+        WaterRelaisState = True
+        IOT.send("true", WaterRelaisPin)
+    except:
+		logging.exception('failed to turn water on')
+	
 
 def TurnWaterOff():
     '''Turn the water off'''
     global WaterRelaisState
-    if WaterRelaisState == True:
-        WaterRelaisState = False
-        GPIO.output(WaterRelaisPin, True)       # pin takes reversed value
-        IOT.send("false", WaterRelaisPin) 
+    try:
+        if WaterRelaisState == True:
+            GPIO.output(not WaterRelaisPin, True)       # pin takes reversed value
+            WaterRelaisState = False
+            IOT.send("false", WaterRelaisPin)
+    except:
+		logging.exception('failed to turn water off')
 
 
 scheduler = None                                                        # init the scheduler so other functions can also reach it.
