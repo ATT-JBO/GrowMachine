@@ -1,6 +1,7 @@
 import socket
 import fcntl
 import struct
+import logging
 
 def isConnected():
     'returns true if we are connected, otherwise false'
@@ -15,9 +16,9 @@ def isConnected():
                     struct.pack('256s', ifname[:15])
             )[20:24])
             connected.append(ifname)
-            print "%s is connected" % ifname
+            logging.info("%s is connected" % ifname)
         except:
-            print "%s is not connected" % ifname
+            logging.info("%s is not connected" % ifname)
 
         i += 1
 
