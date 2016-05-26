@@ -22,9 +22,9 @@ import Network
 
 #set up the ATT internet of things platform
 
-IOT.DeviceId = "3QpxZucPWJjrugpsIPys6aC"
-IOT.ClientId = "KardCard"
-IOT.ClientKey = "42pprmkiubr"
+IOT.DeviceId = ""
+IOT.ClientId = ""
+IOT.ClientKey = ""
 
 TempSensorName = "Temperature"                                #name of the button
 TempSensorPin = 1
